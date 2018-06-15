@@ -333,8 +333,7 @@ module MoSQL
     end
 
     def table_for_ns(ns)
-      _, collection = ns.split(".")
-      find_ns!(ns)[:meta].fetch(:table, collection)
+      find_ns!(ns)[:meta][:table]
     end
 
     def all_mongo_dbs
