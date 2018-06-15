@@ -302,11 +302,7 @@ module MoSQL
           pg.put_copy_data(transform_to_copy(ns, o, schema) + "\n")
         end
         pg.put_copy_end
-        begin
-          pg.get_result.check
-        rescue PGError => e
-          db.send(:raise_error, e)
-        end
+        pg.get_result.check
       end
     end
 
