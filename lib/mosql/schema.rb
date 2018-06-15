@@ -10,16 +10,16 @@ module MoSQL
         if ent.is_a?(Hash) && ent[:source].is_a?(String) && ent[:type].is_a?(String)
           # new configuration format
           col = {
-            :source => ent.fetch(:source),
-            :type   => ent.fetch(:type),
-            :name   => (ent.keys - [:source, :type]).first,
-            :index  => ent.fetch(:index, false),
+              :source => ent.fetch(:source),
+              :type => ent.fetch(:type),
+              :name => (ent.keys - [:source, :type]).first,
+              :index => ent.fetch(:index, false),
           }
         elsif ent.is_a?(Hash) && ent.keys.length == 1 && ent.values.first.is_a?(String)
           col = {
-            :source => ent.first.first,
-            :name   => ent.first.first,
-            :type   => ent.first.last
+              :source => ent.first.first,
+              :name => ent.first.first,
+              :type => ent.first.last
           }
         else
           raise SchemaError.new("Invalid ordered hash entry #{ent.inspect}")
@@ -54,14 +54,14 @@ module MoSQL
       meta = {} if meta.nil?
       meta[:alias] = [] unless meta.key?(:alias)
       meta[:alias] = [meta[:alias]] unless meta[:alias].is_a?(Array)
-      meta[:alias] = meta[:alias].map { |r| Regexp.new(r) }
+      meta[:alias] = meta[:alias].map {|r| Regexp.new(r)}
       meta
     end
 
     def initialize(map)
       @map = {}
       map.each do |db_name, db|
-        @map[db_name] = { :meta => parse_meta(db[:meta]) }
+        @map[db_name] = {:meta => parse_meta(db[:meta])}
         db.each do |cname, spec|
           next unless cname.is_a?(String)
           begin
@@ -76,15 +76,18 @@ module MoSQL
       Sequel.default_timezone = :utc
     end
 
-    def create_schema(db, clobber=false)
+    def create_schema(db, clobber = false)
       @map.values.each do |db_spec|
         db_spec.each do |n, collection|
           next unless n.is_a?(String)
           meta = collection[:meta]
           composite_key = meta[:composite_key]
           keys = []
-          log.info("Creating table '#{meta[:table]}'...")
-          db.send(clobber ? :create_table! : :create_table?, meta[:table]) do
+
+          sql_table = meta.fetch(:table, n).to_sym
+          log.info("Creating table '#{sql_table}'...")
+
+          db.send(clobber ? :create_table! : :create_table?, sql_table) do
             collection[:columns].each do |col|
               opts = {}
               if col[:source] == '$timestamp'
@@ -106,14 +109,14 @@ module MoSQL
             primary_key keys
             if meta[:extra_props]
               type =
-                case meta[:extra_props]
-                when 'JSON'
-                  'JSON'
-                when 'JSONB'
-                  'JSONB'
-                else
-                  'TEXT'
-                end
+                  case meta[:extra_props]
+                  when 'JSON'
+                    'JSON'
+                  when 'JSONB'
+                    'JSONB'
+                  else
+                    'TEXT'
+                  end
               column '_extra_props', type
             end
           end
@@ -124,7 +127,7 @@ module MoSQL
     def find_db(db)
       unless @map.key?(db)
         @map[db] = @map.values.find do |spec|
-          spec && spec[:meta][:alias].any? { |a| a.match(db) }
+          spec && spec[:meta][:alias].any? {|a| a.match(db)}
         end
       end
       @map[db]
@@ -190,7 +193,7 @@ module MoSQL
       end
     end
 
-    def transform_primitive(v, type=nil)
+    def transform_primitive(v, type = nil)
       case v
       when BSON::ObjectId, Symbol
         v.to_s
@@ -207,7 +210,7 @@ module MoSQL
       end
     end
 
-    def transform(ns, obj, schema=nil)
+    def transform(ns, obj, schema = nil)
       schema ||= find_ns!(ns)
 
       original = obj
@@ -228,9 +231,9 @@ module MoSQL
           v = fetch_and_delete_dotted(obj, source)
           case v
           when Hash
-            v = JSON.dump(Hash[v.map { |k, value| [k, transform_primitive(value)] }])
+            v = JSON.dump(Hash[v.map {|k, value| [k, transform_primitive(value)]}])
           when Array
-            v = v.map { |it| transform_primitive(it) }
+            v = v.map {|it| transform_primitive(it)}
             if col[:array_type]
               v = Sequel.pg_array(v, col[:array_type])
             else
@@ -248,7 +251,7 @@ module MoSQL
         row << JSON.dump(extra)
       end
 
-      log.debug { "Transformed: #{row.inspect}" }
+      log.debug {"Transformed: #{row.inspect}"}
 
       row
     end
@@ -277,7 +280,7 @@ module MoSQL
       col[:source] != '$timestamp'
     end
 
-    def all_columns(schema, copy=false)
+    def all_columns(schema, copy = false)
       cols = []
       schema[:columns].each do |col|
         cols << col[:name] unless copy && !copy_column?(col)
@@ -296,7 +299,7 @@ module MoSQL
       schema = find_ns!(ns)
       db.synchronize do |pg|
         sql = "COPY \"#{schema[:meta][:table]}\" " +
-          "(#{all_columns_for_copy(schema).map {|c| "\"#{c}\""}.join(",")}) FROM STDIN"
+            "(#{all_columns_for_copy(schema).map {|c| "\"#{c}\""}.join(",")}) FROM STDIN"
         pg.execute(sql)
         objs.each do |o|
           pg.put_copy_data(transform_to_copy(ns, o, schema) + "\n")
@@ -325,8 +328,8 @@ module MoSQL
       end
     end
 
-    def transform_to_copy(ns, row, schema=nil)
-      row.map { |c| quote_copy(c) }.compact.join("\t")
+    def transform_to_copy(ns, row, schema = nil)
+      row.map {|c| quote_copy(c)}.compact.join("\t")
     end
 
     def table_for_ns(ns)
@@ -338,7 +341,7 @@ module MoSQL
     end
 
     def collections_for_mongo_db(db)
-      (@map[db]||{}).keys
+      (@map[db] || {}).keys
     end
 
     def primary_sql_key_for_ns(ns)
