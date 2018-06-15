@@ -1,19 +1,18 @@
 module MoSQL
-  class SchemaError < StandardError
-  end
+  class SchemaError < StandardError; end;
 
   class Schema
     include MoSQL::Logging
 
     def to_array(lst)
       lst.map do |ent|
+        col = nil
         if ent.is_a?(Hash) && ent[:source].is_a?(String) && ent[:type].is_a?(String)
           # new configuration format
           col = {
             :source => ent.fetch(:source),
             :type   => ent.fetch(:type),
             :name   => (ent.keys - [:source, :type]).first,
-            :index  => ent.fetch(:index, false),
           }
         elsif ent.is_a?(Hash) && ent.keys.length == 1 && ent.values.first.is_a?(String)
           col = {
@@ -60,14 +59,14 @@ module MoSQL
 
     def initialize(map)
       @map = {}
-      map.each do |db_name, db|
-        @map[db_name] = { :meta => parse_meta(db[:meta]) }
+      map.each do |dbname, db|
+        @map[dbname] = { :meta => parse_meta(db[:meta]) }
         db.each do |cname, spec|
           next unless cname.is_a?(String)
           begin
-            @map[db_name][cname] = parse_spec("#{db_name}.#{cname}", spec)
+            @map[dbname][cname] = parse_spec("#{dbname}.#{cname}", spec)
           rescue KeyError => e
-            raise SchemaError.new("In spec for #{db_name}.#{cname}: #{e}")
+            raise SchemaError.new("In spec for #{dbname}.#{cname}: #{e}")
           end
         end
       end
@@ -77,8 +76,8 @@ module MoSQL
     end
 
     def create_schema(db, clobber=false)
-      @map.values.each do |db_spec|
-        db_spec.each do |n, collection|
+      @map.values.each do |dbspec|
+        dbspec.each do |n, collection|
           next unless n.is_a?(String)
           meta = collection[:meta]
           composite_key = meta[:composite_key]
@@ -96,10 +95,6 @@ module MoSQL
                 keys << col[:name].to_sym
               elsif not composite_key and col[:source].to_sym == :_id
                 keys << col[:name].to_sym
-              end
-
-              if col[:index]
-                index col[:name].to_sym
               end
             end
 
@@ -132,10 +127,10 @@ module MoSQL
 
     def find_ns(ns)
       db, collection = ns.split(".", 2)
-      unless (spec = find_db(db))
+      unless spec = find_db(db)
         return nil
       end
-      unless (schema = spec[collection])
+      unless schema = spec[collection]
         log.debug("No mapping for ns: #{ns}")
         return nil
       end
@@ -160,8 +155,8 @@ module MoSQL
 
       val = obj.delete(pieces.first)
 
-      breadcrumbs.reverse.each do |o, key|
-        o.delete(key) if o[key].empty?
+      breadcrumbs.reverse.each do |obj, key|
+        obj.delete(key) if obj[key].empty?
       end
 
       val
@@ -228,7 +223,7 @@ module MoSQL
           v = fetch_and_delete_dotted(obj, source)
           case v
           when Hash
-            v = JSON.dump(Hash[v.map { |k, value| [k, transform_primitive(value)] }])
+            v = JSON.dump(Hash[v.map { |k,v| [k, transform_primitive(v)] }])
           when Array
             v = v.map { |it| transform_primitive(it) }
             if col[:array_type]
@@ -354,7 +349,7 @@ module MoSQL
         keys << ns[:columns].find {|c| c[:source] == '_id'}[:name]
       end
 
-      keys
+      return keys
     end
   end
 end
