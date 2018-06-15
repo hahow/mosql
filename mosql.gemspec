@@ -15,12 +15,13 @@ Gem::Specification.new do |gem|
   gem.name          = "mosql"
   gem.require_paths = ["lib"]
   gem.version       = MoSQL::VERSION
+  gem.licenses      = ["MIT"]
 
-  gem.add_runtime_dependency "sequel"
-  gem.add_runtime_dependency "pg"
-  gem.add_runtime_dependency "rake"
-  gem.add_runtime_dependency "log4r"
-  gem.add_runtime_dependency "json"
+  gem.add_runtime_dependency "sequel", "~> 5.9"
+  gem.add_runtime_dependency "pg", "~> 1.0"
+  gem.add_runtime_dependency "rake", "~> 12.3"
+  gem.add_runtime_dependency "log4r", "~> 1.1"
+  gem.add_runtime_dependency "json", "~> 2.1"
 
   gem.add_runtime_dependency "mongoriver", "0.4"
 
@@ -28,6 +29,6 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency "bson", "~> 1.10"
   gem.add_runtime_dependency "bson_ext", "~> 1.10"
 
-  gem.add_development_dependency "minitest"
-  gem.add_development_dependency "mocha"
+  gem.add_development_dependency "minitest", "~> 5.11"
+  gem.add_development_dependency "mocha", "~> 1.5"
 end
